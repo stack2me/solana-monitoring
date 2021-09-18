@@ -1,0 +1,4 @@
+#nginx
+nginx_server_name: monitor.solana.com
+nginx_auth_user: metrics
+nginx_auth_passw: S0mePassw0rd

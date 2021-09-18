@@ -1,0 +1,36 @@
+---
+# Install packages
+- name: install basic packages
+  become: yes
+  apt: pkg={{ item }} state=latest
+  tags: [packages]
+  with_items:
+    - jq
+    - bc
+
+- name: Create solana group
+  group:
+    name: "{{ sol_group }}"
+    state: present
+
+- name: Create solana user
+  user:
+    shell: "/bin/bash"
+    name: "{{ sol_user }}"
+    group: "{{ sol_group }}"
+
+- name: Install monitoring_script
+  template:
+    src: "get_metrics.sh.j2"
+    dest: "/usr/local/sbin/get_metrics.sh"
+    owner: "{{ sol_user }}"
+    group: "{{ sol_group }}"
+    mode: "0755"
+
+- name: Cronjob for monitoring script
+  cron:
+    name: "monitoring script"
+    minute: "*/1"
+    cron_file: solana_monitor
+    user: "{{sol_user}}"
+    job: "/usr/local/sbin/get_metrics.sh"

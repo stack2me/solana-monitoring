@@ -1,0 +1,4 @@
+---
+solana_host:
+  hosts: <ip_address_your_solana_node>
+  ansible_user: <user_with_root_perm>

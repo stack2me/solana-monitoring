@@ -1,0 +1,26 @@
+upstream prometheus_node_exporter {
+    server 127.0.0.1:9100;
+    keepalive 64;
+}
+
+server {
+    listen "{{ node_exporter_proxy_port }}";
+    server_tokens off;
+
+    location / { deny all; }
+
+    # the virtual host name of this
+    server_name {{ domain }};
+    location /metrics/ {
+        auth_basic closed;
+        auth_basic_user_file htpasswd; 
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://prometheus_node_exporter/metrics;
+        proxy_http_version 1.1;
+        proxy_pass_request_headers on;
+        proxy_set_header Connection "keep-alive";
+        proxy_store off;
+    }
+}

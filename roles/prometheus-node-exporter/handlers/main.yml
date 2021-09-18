@@ -1,0 +1,19 @@
+---
+# handlers file for prometheus-node-exporter
+
+- name: reenable node exporter service
+  command: systemctl reenable prometheus-node-exporter.service
+
+- name: restart node exporter
+  service:
+    name: prometheus-node-exporter
+    state: restarted
+
+- name: reload systemctl
+  systemd:
+    daemon_reload: yes
+
+- name: reload nginx
+  service:
+    name: nginx
+    state: reloaded

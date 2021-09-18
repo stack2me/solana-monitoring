@@ -1,0 +1,103 @@
+---
+# Download prometheus-node-exporter
+- name: Download prometheus node exporter binary
+  become: no
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}.tar.gz"
+    dest: "/tmp/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}.tar.gz"
+
+# Unarchive prometheus-node-exporter
+- name: Unarchive prometheus node exporter
+  become: no
+  unarchive:
+    creates: "/tmp/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}/node_exporter"
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+
+# Create group for prometheus-node-exporter
+- name: Create prometheus_exporter_group
+  group:
+    name: "{{ node_exporter_group }}"
+    state: present
+
+# Create user for prometheus-node-exporter
+- name: Create prometheus_exporter_user
+  user:
+    name: "{{ node_exporter_user }}"
+    groups: "{{ node_exporter_group }}"
+    create_home: no
+    shell: /bin/false
+    system: true
+
+- name: Create folder for custom metrics
+  file:
+    state: directory
+    path: "{{node_exporter_custom_metrics_folder}}"
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: "0755"
+
+# Put prometheus-node-exporter to work dir
+- name: Copy file with owner and permissions
+  copy:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}/node_exporter"
+    dest: "/usr/local/bin/node_exporter"
+    remote_src: yes
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: "0755"
+
+# Create service
+- name: Create systemd service unit
+  template:
+    src: "prometheus-node-exporter.service.j2"
+    dest: "/etc/systemd/system/prometheus-node-exporter.service"
+  notify: reload systemctl
+
+# Check service
+- name: Ensure prometheus node exporter service is enabled and started
+  service:
+    name: "prometheus-node-exporter"
+    state: started
+    enabled: yes
+
+# Remove temporary file
+- name: Remove temporary files
+  file:
+    path: "/tmp/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}.tar.gz"
+    state: absent
+
+- name: install nginx
+  become: yes
+  apt: pkg={{ item }} state=latest
+  tags: [packages]
+  with_items:
+    - nginx
+    - python-passlib
+
+- name: Put password file
+  htpasswd:
+    path: /etc/nginx/htpasswd
+    name: "{{nginx_auth_user}}"
+    password: "{{nginx_auth_passw}}"
+    owner: root
+    group: www-data
+    mode: 0640
+
+# Create Nginx config for prometheus-node-exporter
+- name: Create nginx proxy config
+  template:
+    src: "prometheus_node_exporter_proxy.conf.j2"
+    dest: "/etc/nginx/sites-available/prometheus_node_exporter_proxy.conf"
+  notify: reload nginx
+
+# Enable Nginx config for prometheus-node-exporter
+- name: Enable nginx proxy config
+  file:
+    src: "/etc/nginx/sites-available/prometheus_node_exporter_proxy.conf"
+    dest: "/etc/nginx/sites-enabled/prometheus_node_exporter_proxy.conf"
+    owner: "www-data"
+    group: "www-data"
+    state: link
+  notify: reload nginx

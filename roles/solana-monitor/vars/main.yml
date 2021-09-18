@@ -1,0 +1,5 @@
+---
+# vars file for solana-monitor
+#nginx
+nginx_auth_user: metrics
+nginx_auth_passw: S0mePassw0rd

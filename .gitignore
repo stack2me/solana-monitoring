@@ -1,0 +1,16 @@
+local-configure.yml
+.vagrant/
+._*
+bin/
+lib/
+include/
+local/
+tests.out
+*.retry
+*.log
+vbox_host.cfg
+.DS_Store
+*.py[co]
+odin
+odin.yaml
+odin_variables.yml

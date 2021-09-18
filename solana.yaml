@@ -1,0 +1,9 @@
+- name: solana
+  hosts: solana_host
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: prometheus-node-exporter
+    - role: solana-monitor
+  vars_files:
+    - vars/variables.yml

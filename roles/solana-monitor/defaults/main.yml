@@ -1,0 +1,5 @@
+---
+# defaults file for solana-monitor
+node_exporter_custom_metrics_folder: /var/lib/node_exporter/textfile_collector
+sol_group: sol
+sol_user: sol
